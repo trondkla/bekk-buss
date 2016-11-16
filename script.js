@@ -61,8 +61,16 @@ var App = {
     }
 
     var busHtml = Data.nextBusses.map(bus => {
-      let liveHtml = bus.liveData ? "<i class='fa fa-times'></i>" : "";
-      return `<li><i class="fa fa-bus"></i>${bus.destionation} ${bus.line} ${moment(bus.time).toNow(true)} ${liveHtml}</li>`});
+      let liveHtml = `<i class="fa fa-${bus.liveData ? "bus" : "calendar"}"></i>`;
+      return `<li class="avgang">
+                <div class="line-time">
+                  <span class="destionation">${bus.destionation}</span>
+                  <span class="line">${bus.line} <i class="fa fa-bus"></i></span>
+                </div>
+                <span class="time">${moment(bus.time).toNow(true)}</span>
+
+             </li>`})
+             .join('');
 
     App.render(`
       <section>
@@ -123,4 +131,4 @@ var App = {
 };
 
 App.updateData();
-window.setInterval(App.updateData, 10*1000);
+//window.setInterval(App.updateData, 10*1000);
