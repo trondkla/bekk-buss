@@ -1,0 +1,63 @@
+
+@keyframes bus_blinking {
+  0%   { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Roboto', sans-serif;
+}
+
+.busser {
+  font-size: 4vw;
+  transition: all 0.5s;
+}
+
+.busser .avganger {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.loading {
+  height: 100%;
+  text-align: center;
+  flex-flow: column nowrap;
+}
+
+.loading .bus_loading {
+  font-size: 40vw;
+}
+
+.loading .text {
+  font-size: 8vw;
+}
+
+.bus_departing_soon {
+  animation: bus_blinking 2s infinite;
+}
+
+.bus_loading {
+  animation: bus_blinking 3s infinite;
+}
+
+
+
+.hide {
+  opacity: 0.0;
+}
+
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  align-items: center;
+}
+
+.flex-vertical-center {
+  justify-content: center;
+}
