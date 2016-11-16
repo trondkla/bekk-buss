@@ -42,8 +42,8 @@ var App = {
   },
 
   updateData: () => {
-    //App.getBusData(locationIdTowardsCity);
-    App.getBusData(locationIdFromCity);
+    App.getBusData(locationIdTowardsCity);
+    //App.getBusData(locationIdFromCity);
   },
 
   _updateBusData: (data) => {
@@ -61,11 +61,13 @@ var App = {
     }
 
     var busHtml = Data.nextBusses.map(bus => {
-      let liveHtml = `<i class="fa fa-${bus.liveData ? "bus" : "calendar"}"></i>`;
+      var diffMinutes = bus.time.diff(moment(), 'minutes');
+      let departingSoon = (diffMinutes <= 4) ? "bus-departing-soon" : "";
+      let liveHtml = `<i class="fa fa-${(bus.liveData ? "bus" : "calendar")} ${departingSoon}"></i>`;
       return `<li class="avgang">
                 <div class="line-time">
                   <span class="destionation">${bus.destionation}</span>
-                  <span class="line">${bus.line} <i class="fa fa-bus"></i></span>
+                  <span class="line">${bus.line} ${liveHtml}</span>
                 </div>
                 <span class="time">${moment(bus.time).toNow(true)}</span>
 
@@ -73,13 +75,11 @@ var App = {
              .join('');
 
     App.render(`
-      <section>
-        <p>${Data.nearestStop}</p>
+      <b>${Data.nearestStop} inn til byen</b>
 
-        <ul class="avganger">
-          ${busHtml}
-        </ul>
-      </section>
+      <ul class="avganger">
+        ${busHtml}
+      </ul>
     `);
   },
 

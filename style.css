@@ -69,7 +69,7 @@ html, body {
   font-size: 8vw;
 }
 
-.bus_departing_soon {
+.bus-departing-soon {
   animation: bus_blinking 2s infinite;
 }
 
