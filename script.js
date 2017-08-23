@@ -12,12 +12,29 @@ var url = "http://tvguidn.com/bekk-buss.php?stopId=";
   http://tvguidn.com/bekk-buss.php?stopId=16011050 for /rt/
 */
 
-var locationIdFromCity= "16010050";
-var locationIdTowardsCity  = "16011050";
+/*
+ * Tasks:
+ * 1. Live updates
+ * 2. Animation
+ */
+
+const locationIdFromCity= "16010050";
+const locationIdTowardsCity  = "16011050";
+
+const locationIdCustomNames = {
+  [locationIdFromCity]: 'Fra midtbyen <-',
+  [locationIdTowardsCity]: 'Mot midtbyen ->',
+};
+
+const departuresHowFarAwayInMinutes = 15;
+const departuresHowFarAwayInSeconds = departuresHowFarAwayInMinutes * 60;
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 var Data = {
-  nearestStop: "Bakkegata",
-  nextBusses: [],
+  stops: {},
   lastSuccessfulUpdate: undefined,
   hasError: false
 };
@@ -28,7 +45,7 @@ var App = {
       .done((response) => {
         var data = JSON.parse(response);
         var busInfo = App._parseBusInfo(data);
-        App._updateBusData(busInfo);
+        App._updateBusData(locationId, busInfo);
         App.updateGui();
       })
       .fail((xhr, errorMsg, error) => {
@@ -43,14 +60,37 @@ var App = {
 
   updateData: () => {
     App.getBusData(locationIdTowardsCity);
-    //App.getBusData(locationIdFromCity);
+    App.getBusData(locationIdFromCity);
   },
 
-  _updateBusData: (data) => {
-    console.log(data);
-    Data.nextBusses = data.next;
-    Data.nearestStop = data.name;
+  _updateBusData: (locationId, data) => {
+    const nowPlus15Minutes = moment().add(departuresHowFarAwayInMinutes, 'minutes');
+    const filteredDepartures = data.next.filter( dep => dep.time.isBefore(nowPlus15Minutes));
+    Data.stops[locationId] = filteredDepartures;
     Data.lastSuccessfulUpdate = moment();
+  },
+
+  _findXCoordinateFromRemainingTime: (departureTime, reversePaddingDirection = false) => {
+    const remainingSeconds = departureTime.diff(moment(), 'seconds');
+    const windowWidth = $(window).width();
+    const xCoord = ((departuresHowFarAwayInSeconds - remainingSeconds) / departuresHowFarAwayInSeconds) * windowWidth;
+    if (reversePaddingDirection)
+      return windowWidth - xCoord;
+    return xCoord;
+  },
+
+  _buildHtmlFromDepartures: (busData, reversePaddingDirection = false) => {
+    var departureHtml = busData.map(bus => {
+        var diffMinutes = bus.time.diff(moment(), 'minutes');
+        let departingSoon = (diffMinutes <= 4) ? "bus-departing-soon" : "";
+        let liveHtml = `<i class="fa fa-${(bus.liveData ? "bus" : "calendar")} ${departingSoon}"></i>`;
+        return `<li class="avgang" style="padding-left: ${ App._findXCoordinateFromRemainingTime(bus.time, reversePaddingDirection) }px">
+                  <span class="line">${bus.line} ${liveHtml}</span>
+                  <span class="time">${moment(bus.time).toNow(true)}</span>
+              </li>`;
+      })
+      .join('');
+    return departureHtml;
   },
 
   updateGui: () => {
@@ -60,25 +100,22 @@ var App = {
       return;
     }
 
-    var busHtml = Data.nextBusses.map(bus => {
-      var diffMinutes = bus.time.diff(moment(), 'minutes');
-      let departingSoon = (diffMinutes <= 4) ? "bus-departing-soon" : "";
-      let liveHtml = `<i class="fa fa-${(bus.liveData ? "bus" : "calendar")} ${departingSoon}"></i>`;
-      return `<li class="avgang">
-                <div class="line-time">
-                  <span class="destionation">${bus.destionation}</span>
-                  <span class="line">${bus.line} ${liveHtml}</span>
-                </div>
-                <span class="time">${moment(bus.time).toNow(true)}</span>
+    // TODO: Make general
+    const busFromData = Data.stops[locationIdFromCity];
+    const busTowardsData = Data.stops[locationIdTowardsCity];
 
-             </li>`})
-             .join('');
+    const busFromHtml = busFromData ? App._buildHtmlFromDepartures(busFromData, true) : '';
+    const busTowardsHtml = busTowardsData ? App._buildHtmlFromDepartures(busTowardsData) : '';
 
     App.render(`
-      <b>${Data.nearestStop} inn til byen</b>
-
+      <h2>${locationIdCustomNames[locationIdFromCity]}</h2>
       <ul class="avganger">
-        ${busHtml}
+        ${busFromHtml}
+      </ul>
+
+      <h2>${locationIdCustomNames[locationIdTowardsCity]}</h2>
+      <ul class="avganger">
+        ${busTowardsHtml}
       </ul>
     `);
   },
@@ -99,13 +136,19 @@ var App = {
       .html(html);
   },
 
+  startLoop: () => {
+    window.setInterval(function(){
+      App.updateData();
+    }, 5000);
+  },
+
   parseBusTime: (time) => {
     return moment(time, "DD.MM.YYYY HH:mm");
   },
 
   _parseBusInfo: (data) => {
-    console.log("her", data);
-    console.log(data.name);
+    // console.log("her", data);
+    // console.log(data.name);
     var name = data.name.split("(");
     if (name.length > 1) {
       name = $.trim(name[0]);
@@ -130,5 +173,6 @@ var App = {
   }
 };
 
-App.updateData();
+// App.updateData();
+App.startLoop();
 //window.setInterval(App.updateData, 10*1000);
